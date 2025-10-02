@@ -1,0 +1,559 @@
+---
+output:
+  xaringan::moon_reader:
+    self_contained: true
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: zenburn
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+      titleSlideClass: [left, bottom]
+  seal: false
+---
+class: inverse,left, middle
+background-image: url(background.png)
+background-size: cover
+
+<img src="LOGO_DIPLOMADO.png" width="500px"/>
+
+##Módulo 1: Manipulación de datos y geoprocesos en R
+
+### Introducción a los Sistemas de Información Geográfica
+
+Matías Olea <br> <a href="https://orcid.org/0000-0003-0194-7784">
+ORCID </a><br> 
+matias.olea@pucv.cl</a><br>
+
+.large[<b><a href="https://www.pucv.cl/uuaa/site/edic/base/port/labgrs.html">LabGRS</a> | Octubre 2025</b>] <br>
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  hiline = TRUE
+)
+```
+
+---
+class: center,middle
+background-image: url(labgrs_logo.png)
+background-size: 35%
+
+---
+## Contenidos
+
+.pull-left[
+
+  1) ¿Qué es un S.I.G.?
+  
+  2) Modelos de representación de la realidad a través de geodatos.
+
+  3) Geometría Espacial, Sistema de Referencia y Coordenadas
+  
+  4) Principales operaciones sobre un geodato.
+  
+  5) Formatos de Almacenamiento.
+  
+  6) Niveles de interacción de usuarios con datos geoespaciales.
+  
+  7) Principales fuentes de información de datos geoespaciales.
+  
+  8) Política Nacional de Información Geoespacial.
+  
+]
+
+.pull-right[
+  <img src="https://raw.githubusercontent.com/allisonhorst/stats-illustrations/main/rstats-artwork/r_rollercoaster.png" width="650px"/>
+]
+
+---
+
+### ¿Qué es un SIG?
+
+<center><img src="Historia.jpg" height="80%" /></center>
+
+---
+
+### ¿Qué es un SIG?
+
+- Un SIG es un complejo sistema dónde interactúa la información geoespacial en relación con lo que los usuarios necesiten, para ello se requiere de un soporte o hardware que contenga la información y el software para procesarla. 
+
+--
+
+Tradicionalmente, se suele dividir a los SIG como un sistema compuesto de 5 partes: 
+
+(1) Geodatos
+
+(2) Métodos
+
+(3) Software
+
+(4) Hardware
+
+(5) Usuario
+
+---
+
+### ¿Qué es un SIG?
+
+En la actualidad podemos encontrar definiciones que son más específicas en sus funciones y potencialidades y no se basan solo en los componentes:
+
+--
+
+- Sistema de trabajo para recopilar, analizar, visualizar e interpretar datos relacionados con ubicaciones geográficas y sus relaciones con lo humano y lo natural sobre la tierra. (Joshua Onyedikachi Okeke, 2021).
+
+--
+
+- Es la colección de herramientas que captura, almacenan, analizan, gestionan y presentan información que están relacionadas a localizaciones geográficas. Los SIG comúnmente son usados como sistemas de soporte para tomar las mejores y posibles decisiones a través de relaciones espaciales y no espaciales, visualizaciones y procesamiento (Bhat, M. A., Shah, R. M., & Ahmad, B., 2011)
+
+---
+
+### Modelos de representación de la realidad a través de geodatos
+
+
+<center><img src="realidad.jpg" height="500px" /></center>
+
+---
+
+### Modelos geométricos
+
+<center><img src="modelo_1.jpg" height="500px" /></center>
+---
+
+### Modelos de representación de la realidad a través de geodatos
+
+
+<center><img src="realidad.jpg" height="500px" /></center>
+
+---
+
+### Modelos de celdas
+
+<center><img src="modelo_2.jpg" height="500px" /></center>
+
+---
+
+### Vectores
+
+<center><img src="primitiva_1.jpg" height="450px" /></center>
+
+.footnote[
+<span style="font-size:9pt"> Fuente: Victor Olaya (2020) </span>
+
+]
+
+---
+
+### Vectores
+
+<center><img src="SIG_1.jpg" height="500px" /></center>
+
+---
+
+### Vectores
+
+<center><img src="SIG_2.jpg" height="500px" /></center>
+
+---
+
+### Ráster
+
+<center><img src="primitiva_2.jpg" height="450px" /></center>
+
+.footnote[
+<span style="font-size:9pt"> Fuente: Modificado de Victor Olaya (2020) por LabBRS </span>
+
+]
+
+---
+
+### Ráster
+
+<center><img src="SIG_3.jpg" height="400px" /></center>
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+¿Cómo representamos esta estructura irregular?
+
+
+<center><img src="GRACE_globe_animation.gif" height="400px" /></center>
+
+.footnote[
+<span style="font-size:9pt"> Anomalías de gravedad medidas por GRACE (2003) </span>
+
+]
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+¿Cómo represtamos esta estructura irregular?
+
+
+<center><img src="representacion.jpg" height="400px" /></center>
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<center><img src="datum.jpg" height="400px" /></center>
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<b>América del Norte </b>
+
+  - North American Datum 1927 (Elipsoide de Clarke) - NAD27
+  - North American Datum 1983 (Geodesic Model) - NAD83. Ubicación Kansas (39°N 98°W)
+  
+<center><img src="deformaciones_1.jpg" height="300px" /></center>
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<b>América del Sur / Chile </b>
+
+Provisorio Sudamericano 1956 (Elipsoide Internacional 1924) PSAD56. 
+
+_Ubicación_: Ciudad de Las Canoas, Venezuela.
+
+--
+
+<center><img src="atributos_1.jpg" height="300px" /></center>
+
+  
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<b>América del Sur / Chile </b>
+
+Sudamericano 1969 (Elipsoide GRS 1967) - SAD69 o SAM69.
+
+_Ubicación_: Chua, Brasil.
+
+--
+
+<center><img src="atributos_2.jpg" height="300px" /></center>
+  
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<b>América del Sur / Chile </b>
+
+World Geodesic System (Elipsoide WGS84) - WGS84.
+
+--
+
+<center><img src="atributos_3.jpg" height="300px" /></center>
+
+---
+
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Sistema de Referencia**
+
+<b>América del Sur / Chile </b>
+
+Sistema de Referencia Geocéntrico para las Américas (Elipsoide GRS 1980) - SIRGAS.
+
+--
+
+<center><img src="atributos_4.jpg" height="300px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+<center><img src="deformaciones_2.jpg" height="500px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+<center><img src="deformaciones_3.jpg" height="500px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Coordenadas**
+
+<center><img src="representacion.jpg" height="400px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Coordenadas Geográficas**
+
+<center><img src="geograficas.jpg" height="400px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Coordenadas Métricas (Proyectadas en un plano)**
+
+<center><img src="proyectadas.jpg" height="400px" /></center>
+
+---
+### Geometría Espacial, Sistema de Referencia y Coordenadas
+
+**Coordenadas Geográficas vs Métricas**
+
+<center><img src="diferencias.jpg" height="400px" /></center>
+
+---
+### Sistema Universal Transversal de Mercator (UTM)
+
+<center><img src="utm.jpg" height="450px" /></center>
+
+---
+### Sistema Universal Transversal de Mercator (UTM)
+
+<center><img src="utm_2.jpg" height="450px" /></center>
+
+---
+### Sistema Universal Transversal de Mercator (UTM)
+
+<center><img src="utm_3.jpg" height="450px" /></center>
+
+
+---
+
+### Formatos de Almacenamiento: Vectores
+
+- **Shapefile**: Dato vectorial de ESRI, compuesto de múltiples archivos que contienen información geométrica (forma/shape), localización y de información (atributos) principalmente.
+
+<b>Pros</b>: Es un formato ampliamente utilizado por lo que tiene un amplio soporte en diferentes softwares para su consulta, visualización y procesamiento.
+
+<b>Contras</b>: Es ineficiente para grandes datasets y está limitada por su composición de múltiples archivos.
+
+--
+
+- **GeoDatabase**: es un formato integral de almacenamiento y gestión de datos dentro del ecosistema de ArcGIS (ESRI).
+
+<b>Pros</b>: Está diseñado para el almacenamiento de grandes volúmenes de datos, que entrega ventajas a la hora de gestionar la información como una base de datos compleja.
+
+<b>Contras</b>: Está diseñado para ser compatible en ecosistemas de ESRI, pero aún existen incompatibilidades para aprovechar todas sus funcionalidades en softwares y plataformas externas.
+
+---
+
+### Formatos de Almacenamiento: Vectores
+
+- **GeoPackage**: es un formato de acceso libre en un único formato, diseñado como un subconjunto de SQLite. Utilizado especialmente para proyectos colaborativos.
+
+<b>Pros</b>: puede almacenar vectores, ráster y datos no espaciales en un único archivo de alta compatibilidad en múltiples softwares y plataformas.
+
+<b>Contras</b>: Puede generar bajos rendimientos cuando trabajamos con bases de datos extremadamente grandes, y es necesario cumplir con ciertos protocolos a la hora de almacenar datos.
+
+--
+
+- **GeoJSON**: es un formato basado en texto que utiliza como base JSON para codificar las estructuras de los datos geográficos.
+
+<b>Pros</b>: formato ligero, fácil de leer, escribir y procesar, por lo que es muy útil para aplicaciones web.
+
+<b>Contras</b>: Ineficiente para grandes conjuntos de datos debido a su naturaleza basada en texto, y presenta algunas limitaciones para análisis de gran escala.
+
+---
+
+### Formatos de Almacenamiento: Vectores
+
+- **KMZ/KML**: es un formato basado en XML diseñado para desplegar información espacial en plataformas de Google.
+
+<b>Pros</b>: al ser diseñado para plataformas web de Google, son archivos ligeros lo que facilita compartir rápidamente información a diferentes niveles de usuarios.
+
+<b>Contras</b>: al esta diseñados para visualizar, es más ineficiente para procesar la información, sobre todo para bases de datos complejas.
+
+---
+### Formatos de Almacenamiento: Ráster
+
+Los modelos ráster pueden ser almacenados en múltiples formatos, los más comunes son:
+
+--
+- **GeoTIFF** (Geographical Tagged Image File Format). Fuente de datos en formato Tiff, con la particularidad de que es <u>capaz de almacenar información de referencia espacial</u>.
+
+
+--
+- **GMLJP2** (Geographic Markup Language JPEG2000). Muy parecido al formato JPEG pero con <u>mayores beneficios a la hora de comprensión de los datos</u> sin perder información o calidad.
+
+
+--
+- **NetCDF** (Network Common Data Form). Fuente de datos creada para el almacenamiento de información científica en varias dimensiones. Esta fuente de información se asocia principalmente a datos de tipos climáticos o productos satelitales. Su <u>gran capacidad de información</u> la hacen muy útil para compartir grandes volúmenes de información.
+
+
+--
+- **HDF** (Hierarchical Data Format). Al igual que el NetCDF, son fuentes creadas para almacenar <u>grandes volúmenes de información</u> científica espacial.
+
+
+--
+- **HGT** Formato asociado a modelo de elevación SRTM (Shuttle Radar Topography Mission Height) <u>caracterizado por almacenar valores enteros positivos y negativos de 2 bits</u>.
+
+
+
+---
+### Operaciones
+
+<center><img src="operaciones.jpg" height="500px" /></center>
+
+---
+### Aplicaciones Nivel Usuario
+
+<center><img src="aplicaciones_1.jpg" height="500px" /></center>
+
+---
+### Aplicaciones Nivel Creador de Herramientas
+
+<center><img src="aplicaciones_2.jpg" height="500px" /></center>
+
+---
+### Aplicaciones Nivel Investigador/a
+
+<center><img src="aplicaciones_3.jpg" height="500px" /></center>
+
+---
+### Fuentes de Información espacial (geodatos)
+
+--
+
+<b>Infraestructura de Datos Espaciales IDE Chile e IDE Institucionales</b> <a href="https://www.ide.cl/index.php/ide-institucionales"> (Online).
+
+--
+
+<b>Sistema de Información Territorial (SIT) CONAf</b> <a href="https://sit.conaf.cl/"> (Online).
+
+
+--
+
+<b>Sistema de Información y Monitoreo de Biodiversidad (SIMBIO)</b> <a href="https://apps.mma.gob.cl/visorsimbio"> (Online).
+
+--
+
+<b>Atlas Sudamericano de Sequía (SADA-CR2) </b> <a href="https://sada.cr2.cl/"> (Online).
+
+--
+
+<b>The Global Multi-resolution Topography (GMRT)</b>  <a href="https://www.gmrt.org/GMRTMapTool/"> (Online).
+
+--
+
+<b>Natural Earth Data</b> <a href="https://www.naturalearthdata.com/downloads/"> (Online).
+
+--
+
+<b>Global Surface Water</b> <a href="https://global-surface-water.appspot.com/map"> (Online).
+
+--
+
+<b>CR2MET: A high-resolution precipitation and temperature dataset for the period 1960-2021 in continental Chile </b> <a href="https://zenodo.org/records/7529682"> (Online).
+
+--
+
+<b>Plataforma de Riesgo y Adaptación Climática Territorial (PRACT)  </b> <a href="https://www.adaptacionclimatica.cl/#/mapa"> (Online).
+
+
+---
+### Política Nacional de Información Geoespacial (PNIG)
+
+La **Política Nacional de Información Geoespacial** proporciona las directrices y el marco de referencia para la labor del Estado en materia de información geoespacial. 
+
+Su propósito principal es fortalecer la institucionalidad en la gestión de esta información.
+
+--
+
+Esta política es un insumo básico para la gestión y planificación del Estado, buscando disponer al país de datos geoespaciales de calidad para el conocimiento y comprensión del territorio nacional. Su implementación tiene un horizonte temporal de 12 años y abarca todo el territorio nacional (continental, insular y antártico).
+
+
+---
+### Política Nacional de Información Geoespacial (PNIG)
+
+Para la conducción de esta política se establecen cuatro **Ejes Estratégicos**: 
+
+--
+
+1. **Generación de información geoespacial**, enfocada en identificar datos necesarios, acordar un modelo de gobernanza y garantizar la calidad y coordinación.
+
+--
+
+2. **Acceso, gestión y uso de la información geoespacial**, buscando garantizar un acceso confiable y transparente, promover su uso para la toma de decisiones y fortalecer las capacidades.
+
+--
+
+3. **Interoperabilidad de los datos y sistemas**, impulsando el uso de normas y estándares técnicos para un intercambio seguro y expedito.
+
+--
+
+4. **Marco institucional**, que define responsabilidades, refuerza la gobernanza y promueve la colaboración internacional.
+
+
+---
+### Política Nacional de Información Geoespacial (PNIG)
+
+**2006** Decreto Supremo N°28/2006 del Ministerio de Bienes Nacionales. Entrega a este ministerio y a la Secretaria Ejecutiva del Sistema Nacional de Coordinación de Información Territorial o IDE Chile, la responsabilidad de conducir y coordinar la  aplicación de esta política pública.
+
+--
+
+**2017** "Marco Integrado de Información Geoespacial (IGIF). Comité de Expertos de Información Geoespacial de Naciones Unidas (UN-GGIM) acuerda que Naciones Unidas y Banco Mundial colaboren en la PNIG.
+
+--
+
+**2019-2021** Decreto N° 469/2019 del Ministerio del Interior y Seguridad Pública. Aprueba la política Nacional de Ordenamiento Territorial.  
+
+--
+
+**2021-2022** Decreto N°24/2021 del Ministerio de Ciencia, Tecnología, Conocimiento e Innovación. Crea la comisión asesora presidencial en materia espacial.
+
+--
+
+**2023** Proceso de participación ciudadana para la propuesta de PNIG.
+
+--
+
+**2024** Consejo de ministros aprueba la Política Nacional de Información Geoespacial.
+
+--
+
+**2025** El Consejo de Ministros de la Información Territorial, presidido por el Ministro de Bienes Nacionales, se reúne en el Palacio de La Moneda para la aprobación del plan de acción para la implementación de PNIG.
+
+---
+### Bibliografía
+
+2023 Secretaría Ejecutica IDE Chile, Ministerio de Bienes Nacionales. _Propuesta para una Política Nacional de Información Geoespacial_. <a href="https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.bienesnacionales.cl/wp-content/uploads/2023/08/Propuesta-de-Politica-Geoespacial-v5-09-06-2023.pdf&ved=2ahUKEwj4hOSumYSQAxUDJrkGHZqIAvAQFnoECBgQAQ&usg=AOvVaw0eW8z2rMZU5s5Ab7eizmBQ"> Versión Online.
+
+2020 Víctor Olaya. _Sistemas de Información Geográfica_. <a href="http://volaya.github.io/libro-sig/"> Versión Online.
+
+2018 IDE Chile. _Geodesia en Chile, teoría y aplicación del sistema de referencia geocentrico para las Americas (SIRGAS)_. <a href="https://www.ide.cl/images/Publicaciones/Documentos/LIBRO_SIRGAS.pdf"> Versión Online.  
+
+2018 José A. Tarrío, Bernardo Barraza, Karina Salinas, Gonzalo Lira, Rodrigo Urrutia. _Transición de PSAD56 a SIRGAS en el datum de minería de Chile mediante Modelos de Distorsión_. Simposio SIRGAS octubre 2018, Aguascalientes México. <a href="https://www.sirgas.org/fileadmin/docs/Boletines/Bol23/17_Tarrio_et_al_2018_de_PSAD56_a_SIRGAS.pdf"> Versión Online.  
+
+
+
+
+
+
+
+
+---
+class: middle
+![logo](LABGRS-PUCV.png) 
+
+
