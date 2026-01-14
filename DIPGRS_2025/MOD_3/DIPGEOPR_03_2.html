@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>DIPGEOPR_03_2.knit</title>
+    <meta charset="utf-8" />
+    <script src="DIPGEOPR_03_2_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: inverse,left, middle
+background-image: url(background.png)
+background-size: cover
+
+&lt;img src="LOGO_DIPLOMADO.png" width="500px"/&gt;
+
+## Módulo 3: Análisis masivo de datos satelitales y Google Earth Engine
+
+### Análisis de series de tiempo con paquete "npphen"
+
+.large[&lt;b&gt;&lt;a href="https://www.pucv.cl/uuaa/site/edic/base/port/labgrs.html"&gt;LabGRS&lt;/a&gt; | Diciembre 2025&lt;/b&gt;] &lt;br&gt;
+
+Roberto O. Chávez&lt;br&gt; &lt;a href="http://github.com/xxxx"&gt;
+Github: robertogrspucv&lt;/a&gt;&lt;br&gt; 
+&lt;a href="mailto:roberto.chavez@pucv.cl"&gt; roberto.chavez@pucv.cl&lt;/a&gt;&lt;br&gt;
+
+
+
+---
+class: center,middle
+background-image: url(labgrs_logo.png)
+background-size: 35%
+---
+## ¿Qué es "npphen"?
+&lt;center&gt;&lt;img src="img01_npphen.png" 
+height="450px" /&gt;&lt;/center&gt;
+.footnote[https://www.pucv.cl/uuaa/labgrs/proyectos/introduction-to-npphen-in-r]
+
+---
+## ¿Por qué fenología?
+&lt;center&gt;&lt;img src="img08_geobon.png" 
+height="450px" /&gt;&lt;/center&gt;
+.footnote[https://geobon.org]
+
+---
+## Fenología desde el espacio: índices vegetacionales
+&lt;center&gt;&lt;img src="img02_indices.png" 
+height="450px" /&gt;&lt;/center&gt;
+
+---
+## Lo que tratamos de estimar: leaf area index (LAI)
+&lt;center&gt;&lt;img src="img03_lai.png" 
+height="450px" /&gt;&lt;/center&gt;
+.footnote["Fotos hemisféricas de bosques de Lenga(Nothofagus pumilio) en el sur de Chile"]
+
+---
+## Land surface phenology
+&lt;center&gt;&lt;img src="img04_surf_phen.png" 
+height="450px" /&gt;&lt;/center&gt;
+
+---
+## Chile: un gradiente de "verdor" desde Atacama hasta Patagonia
+&lt;center&gt;&lt;img src="img05_gradient.png" 
+height="450px" /&gt;&lt;/center&gt;
+
+---
+## Ejemplos: series de EVI de bosques de Chile Central
+&lt;center&gt;&lt;img src="img06_tseries.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## Anomalías EVI: ¿cuánto es grave?
+&lt;center&gt;&lt;img src="img07_grave.png" 
+height="400px" /&gt;&lt;/center&gt;
+
+---
+## "npphen": cuantificando "grave"
+&lt;center&gt;&lt;img src="img09_npphen.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## Hiper-sequía 2019: ¿cuánto es grave?
+&lt;center&gt;&lt;img src="img10_hsequia.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## npphen: El motor de PhenChile
+&lt;center&gt;&lt;img src="img13_phenchile.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## npphen: El motor de PhenChile
+&lt;center&gt;&lt;img src="img14_constitucion.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## Defoliación extrema Verano 2021 en Aysén
+&lt;center&gt;&lt;img src="img11_cuncuna.png" 
+height="500px" /&gt;&lt;/center&gt;
+
+---
+## Ranking de defoliaciones extremas en Aysén
+&lt;center&gt;&lt;img src="img12_cuncuplot.png" 
+height="400px" /&gt;&lt;/center&gt;
+
+---
+## Anomalías extremas de "tormenta de fuego" 2017
+
+Llamamos librerías y leemos los datos
+
+
+``` r
+library(tidyverse)
+library(terra)
+library(npphen)
+
+setwd("C:/TuDirectorio/")
+datos.p &lt;- read_csv("MOD13Q1_NDVI_plant.csv") # Series de pixeles clase TS
+tabla_fechas &lt;- read_csv("MOD13Q1_dates_ts492.csv") # Fechas Modis-Terra 2000-2021
+ndvi.st &lt;- rast("MOD13Q1_NDVI_ts492.tif") # NDVI Modis-Terra (MOD13Q1)
+
+# region de interes para calculos; usar roi 2 si pc tiene pocos cores
+roi &lt;- vect("roi_3.gpkg") 
+```
+
+
+
+---
+## Anomalías extremas de "tormenta de fuego" 2017
+
+Utilizaremos la serie de tiempo de EVI de Plantación forestal de Terra y el periodo 2005-2016 como base de referencia
+
+
+``` r
+# fechas del periodo de referencia (obtenido del analisis de ciclos)
+which(year(datos.p$dates) == 2010) %&gt;% first()
+```
+
+```
+## [1] 228
+```
+
+``` r
+which(year(datos.p$dates) == 2016) %&gt;% last()
+```
+
+```
+## [1] 388
+```
+
+---
+
+### "npphen": Funciones para vectores
+
+**PhenKplot**
+
+
+``` r
+## PhenKplot Plantacion para toda la serie (2002-2023)
+PhenKplot(x = datos.p$NDVI, # vector numerico de la TS
+          dates = datos.p$dates, # vector de fechas de la misma longitud
+          h = 2, # 1 para hemisferio sur; 2 para hemisferio norte
+          xlab = "Dia del periodo de crecimiento", ylab = "NDVI", # etiquetas de eje
+          rge = c(0, 1)) # rango teórico de los valores
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-5-1.png" width="100%" /&gt;
+
+---
+
+### "npphen": Funciones para vectores
+
+**PhenKplot**
+
+
+``` r
+## PhenKplot Plantacion para periodo de referencia (2005-2016)
+PhenKplot(x = datos.p$NDVI[228:390], 
+          dates = datos.p$dates[228:390], 
+          h = 2, 
+          xlab = "Dia del periodo de crecimiento", ylab = "NDVI", 
+          rge = c(0,1)) 
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-7-1.png" width="100%" /&gt;
+
+---
+### "npphen": Funciones para vectores
+
+**Phen**
+
+
+``` r
+## Fenologia Plantacion para periodo de referencia (2005-2016)
+fen_plant &lt;- Phen(x = datos.p$NDVI[228:390], # vector numerico de la TS
+                  dates = datos.p$dates[228:390], # vector de fechas de la misma longitud
+                  h = 2, # 1 para hemisferio sur; 2 para hemisferio norte
+                  frequency = "16-days", # periodicidad de los datos de salida
+                  rge = c(0, 1), plot = F) # rango teórico de los valores
+
+plot(fen_plant, ylim = c(0, 1), type = "l", col = "red", ylab = "NDVI", xlab = "DGS")
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-9-1.png" width="100%" /&gt;
+
+---
+### "npphen": Funciones para vectores
+
+**ExtremeAnom**
+
+Primero recordemos:
+
+
+``` r
+# Periodo de referencia
+which(year(datos.p$dates) == 2010) %&gt;% first()
+```
+
+```
+## [1] 228
+```
+
+``` r
+which(year(datos.p$dates) == 2016) %&gt;% last()
+```
+
+```
+## [1] 388
+```
+
+``` r
+# Periodo para calculo de anomalias
+which(year(datos.p$dates) == 2016) %&gt;% first()
+```
+
+```
+## [1] 366
+```
+
+``` r
+which(year(datos.p$dates) == 2018) %&gt;% last()
+```
+
+```
+## [1] 434
+```
+
+---
+### "npphen": Funciones para vectores
+
+**ExtremeAnom**
+
+
+``` r
+## Anomalias Plantacion para periodo de referencia (2005-2016)
+anom_plant &lt;- ExtremeAnom(x = datos.p$NDVI*10000, # vector numerico con series de tiempo en INT
+                          dates = datos.p$dates, # vector de fechas de la misma longitud
+                          h = 2, # hemisferio
+                          refp = c(228:390), # periodo de referencia (posicion # de la fecha)
+                          anop = c(343:492), # periodo para calcular anomalias
+                          rge = c(0,10000), # rango teórico de los valores en INT
+                          output = "both") # salida de la funcion
+
+anom_plant %&gt;% length() /2
+```
+
+```
+## [1] 150
+```
+
+``` r
+extreme_plant &lt;- anom_plant[1:150]
+extreme_plant[anom_plant[150:300] &lt; 90] &lt;- NA
+```
+
+---
+### "npphen": Funciones para vectores
+
+**ExtremeAnom**
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-12-1.png" width="100%" /&gt;
+
+---
+### "npphen": Funciones para raster
+
+**PhenMap** Primero ploteamos solo el NDVI de la primera fecha y revisamos que los datos sean números enteros
+
+
+```
+## [1] "INT2S"
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-13-1.png" width="100%" /&gt;
+
+---
+### "npphen": Funciones para raster
+
+**PhenMap** Mapa de fenología
+
+
+``` r
+roi_Fen &lt;- PhenMap(s = roi_NDVI[[228:390]], # SpatRaster de serie de tiempo en INT
+                   dates = datos.p$dates[228:390], # vector de fechas (misma longitud)
+                   h = 2, 
+                   frequency = "16-days", 
+                   nCluster = 2, # numero de nucleos
+                   outname = "Fenologia_2010-2016.tif", # nombre de salida (para guardar a disco)
+                   datatype = "INT2S", # tipo de dato
+                   rge = c(0, 10000)) 
+plot(roi_Fen[[2:3]])
+```
+
+
+Este resultado nos entregará un raster multibanda con tantas fechas dependiendo de la frecuencia. Cada fecha o banda indicará el valor esperado de la fenología para ese pixel. Si sumamos todas las bandas, podremos obtener una aproximación a que tan productiva es área.
+
+
+``` r
+roi_auc &lt;- sum(roi_Fen, na.rm=T)
+```
+
+---
+
+### "npphen": Funciones para raster
+
+**PhenMap** Mapa de productividad anual (para el periodo)
+
+
+``` r
+plot(roi_auc)
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-17-1.png" width="100%" /&gt;
+
+---
+
+### "npphen": Funciones para raster
+
+**ExtremeAnoMap** Mapa de anomalías extremas
+
+
+``` r
+roi_Anom &lt;- ExtremeAnoMap(s = roi_NDVI[[228:411]], # vector numerico con las series de tiempo en INT
+                          dates = datos.p$dates[228:411], # vector de fechas de la misma longitud
+                          h = 2, # hemisferio
+                          refp = c(1:161), # periodo de referencia (posicion # de la fecha)
+                          anop = c(162:184), # perodo para calcular anomalias (posicion # de la fecha)
+                          rge = c(0,10000), # rango teórico de los valores
+                          output = "clean", # salida de la funcion
+                          rfd = 0.9, # umbral para determinar que es extremo
+                          nCluster = 8, # numero de nucleos
+                          outname = "Anomalia_2017_refp_2010-2016.tif", # nombre de salida
+                          datatype = "INT2S") # tipo de datos
+```
+
+
+
+---
+
+### "npphen": Funciones para raster
+
+**ExtremeAnoMap** Mapa de anomalías extremas
+
+
+``` r
+plot(roi_Anom[[4]], 
+     range = c(-7000,7000), 
+     col = RColorBrewer::brewer.pal(8, 'RdYlBu'))
+```
+
+&lt;img src="DIPGEOPR_03_2_files/figure-html/unnamed-chunk-21-1.png" width="100%" /&gt;
+
+---
+
+class: inverse middle
+![logo](LABGRS-PUCV.png)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "slideNumberFormat": "%current%",
+  "highlightStyle": "zenburn",
+  "highlightLines": true,
+  "ratio": "16:9",
+  "countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
